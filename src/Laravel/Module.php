@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Nwidart\Modules\Laravel;
@@ -8,17 +9,13 @@ use Illuminate\Container\Container;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\AliasLoader;
 use Illuminate\Foundation\ProviderRepository;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Translation\Translator;
 use Nwidart\Modules\Contracts\ActivatorInterface;
-use Nwidart\Modules\Entities\ModuleEntity;
-use Nwidart\Modules\Json;
 use Nwidart\Modules\Module as BaseModule;
 
 class Module extends BaseModule
 {
-
     /**
      * The laravel|lumen application instance.
      *
@@ -44,18 +41,22 @@ class Module extends BaseModule
      * @var array of cached Json objects, keyed by filename
      */
     protected $moduleJson = [];
+
     /**
      * @var CacheManager
      */
     private $cache;
+
     /**
      * @var Filesystem
      */
     private $files;
+
     /**
      * @var Translator
      */
     private $translator;
+
     /**
      * @var ActivatorInterface
      */
@@ -123,7 +124,8 @@ class Module extends BaseModule
         return !$this->attributes['is_active'];
     }
 
-    public function getId() {
+    public function getId()
+    {
         return $this->id;
     }
 
@@ -142,11 +144,10 @@ class Module extends BaseModule
      */
     public function get(string $key, $default = null)
     {
-        return isset($this->attributes[$key]) ? $this->attributes[$key] : $default;
-    }
-
-    public function getAlias(): string
-    {
-        return $this->attributes['alias'];
+        // Assume this Module is loaded from database.
+        if ($this->getId()) {
+            return isset($this->attributes[$key]) ? $this->attributes[$key] : $default;
+        }
+        return $this->json('module.json')->get($key, $default);
     }
 }

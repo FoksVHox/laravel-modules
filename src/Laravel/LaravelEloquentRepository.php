@@ -2,13 +2,14 @@
 
 namespace Nwidart\Modules\Laravel;
 
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Nwidart\Modules\Collection;
 use Illuminate\Container\Container;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Filesystem\Filesystem;
+use Nwidart\Modules\Collection;
+use Nwidart\Modules\Contracts\ModuleInterface;
 use Nwidart\Modules\Contracts\RepositoryInterface;
 use Nwidart\Modules\Entities\ModuleEntity;
 use Nwidart\Modules\Exceptions\ModuleNotFoundException;
-use Nwidart\Modules\Laravel\Module;
 
 class LaravelEloquentRepository implements RepositoryInterface
 {
@@ -132,15 +133,16 @@ class LaravelEloquentRepository implements RepositoryInterface
             ->newQuery()
             ->where('is_active', $status)
             ->get();
+
         return $this->convertToCollection($results)->toArray();
     }
 
     /**
      * Find a specific module.
      * @param $name
-     * @return \Nwidart\Modules\Contracts\ModuleInterface
+     * @return ModuleInterface
      */
-    public function find($name): ?\Nwidart\Modules\Contracts\ModuleInterface
+    public function find($name): ?ModuleInterface
     {
         $module = $this->moduleEntity
             ->newQuery()
@@ -151,16 +153,16 @@ class LaravelEloquentRepository implements RepositoryInterface
             return null;
         }
 
-        return $this->createModule($this->app, $module->name, $module->path);
+        return $this->createModule($this->app, $module->name, $module->path, $module);
     }
 
     /**
      * Find a specific module. If there return that, otherwise throw exception.
      * @param $name
-     * @return \Nwidart\Modules\Contracts\ModuleInterface
+     * @return ModuleInterface
      * @throws ModuleNotFoundException
      */
-    public function findOrFail($name): \Nwidart\Modules\Contracts\ModuleInterface
+    public function findOrFail($name): ModuleInterface
     {
         $module = $this->find($name);
 
@@ -179,7 +181,7 @@ class LaravelEloquentRepository implements RepositoryInterface
     }
 
     /**
-     * @return \Illuminate\Filesystem\Filesystem
+     * @return Filesystem
      */
     public function getFiles()
     {
@@ -203,7 +205,7 @@ class LaravelEloquentRepository implements RepositoryInterface
      * Delete a specific module.
      * @param string $name
      * @return bool
-     * @throws \Nwidart\Modules\Exceptions\ModuleNotFoundException
+     * @throws ModuleNotFoundException
      */
     public function delete($name): bool
     {
@@ -214,19 +216,15 @@ class LaravelEloquentRepository implements RepositoryInterface
     {
         $collection = new Collection();
         $eloquentCollection->map(function ($module) use ($collection) {
-            $collection->push($this->createModule($this->app, $module->name, $module->path, $module->toArray()));
+            $collection->push($this->createModule($this->app, $module->name, $module->path, $module));
         });
-        return $collection;
-    }
 
-    public function findRequirements($name): array
-    {
-        // TODO: Implement findRequirements() method.
+        return $collection;
     }
 
     public function getPath(): string
     {
-        // TODO: Implement getPath() method.
+        return $this->config('paths.modules', base_path('Modules'));
     }
 
     public function findByAlias(string $alias)
@@ -240,31 +238,50 @@ class LaravelEloquentRepository implements RepositoryInterface
             return null;
         }
 
-        return $this->createModule($this->app, $module->name, $module->path);
-    }
-
-    public function boot(): void
-    {
-        // TODO: Implement boot() method.
-    }
-
-    public function register(): void
-    {
-        // TODO: Implement register() method.
-    }
-
-    public function assetPath(string $module): string
-    {
-        // TODO: Implement assetPath() method.
+        return $this->createModule($this->app, $module->name, $module->path, $module);
     }
 
     public function isEnabled(string $name): bool
     {
-        // TODO: Implement isEnabled() method.
+        $module = $this->findOrFail($name);
+        return $module->enabled();
     }
 
     public function isDisabled(string $name): bool
     {
-        // TODO: Implement isDisabled() method.
+        $module = $this->findOrFail($name);
+        return $module->disabled();
+    }
+
+    public function findRequirements($name): array
+    {
+        $requirements = [];
+
+        $module = $this->findOrFail($name);
+
+        foreach ($module->getRequires() as $requirementName) {
+            $requirements[] = $this->findByAlias($requirementName);
+        }
+
+        return $requirements;
+    }
+
+    public function boot(): void
+    {
+        foreach ($this->getOrdered() as $module) {
+            $module->boot();
+        }
+    }
+
+    public function register(): void
+    {
+        foreach ($this->getOrdered() as $module) {
+            $module->register();
+        }
+    }
+
+    public function assetPath(string $module): string
+    {
+        return $this->config('paths.assets') . '/' . $module;
     }
 }

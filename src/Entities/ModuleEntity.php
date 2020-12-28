@@ -20,4 +20,13 @@ use Illuminate\Database\Eloquent\Model;
 class ModuleEntity extends Model
 {
     public $table = 'modules';
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'requires' => 'array',
+    ];
 }
