@@ -4,6 +4,34 @@ All Notable changes to `laravel-modules` will be documented in this file.
 
 ## Next
 
+### Fixed
+
+- Fixed the ability to override commands via config file.
+
+## 8.2 - 2020-11-11
+
+### Added
+
+- New `module:make-component` command to generate laravel components
+
+### Fixed
+
+- Fixed bug: `Target class [Nwidart\Modules\Commands\] does not exist.`
+
+## 8.1 - 2020-11-10
+
+### Added
+
+- Command management via configuration file 
+- Laravel 8 Factories compatibility
+- New improved way to define controller types. `--web`, `--api` and `--plain` options.
+- New configuration option to make compose run in silent mode
+
+### Changed
+
+- New generated commands now use the `$signature` property instead of `$name`
+- Fixed issue where `order` was used instead of `priority`
+
 ## 8.0 - 2020-10-03
 
 ### Added

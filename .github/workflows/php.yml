@@ -1,6 +1,10 @@
 name: PHP Pipeline
 
-on: [push, pull_request]
+on:
+  push:
+    branches: ['master', 'develop']
+  pull_request:
+    branches: ['develop']
 
 jobs:
   build:
@@ -10,7 +14,7 @@ jobs:
     strategy:
       max-parallel: 2
       matrix:
-        php-versions: ['7.3', '7.4']
+        php-versions: ['8.0', '8.1']
 
     name: PHP ${{ matrix.php-versions }}
 
@@ -31,9 +35,3 @@ jobs:
 
     - name: Run test suite
       run: composer run-script test-coverage
-
-    - name: Push coverage to Scrutinizer-ci
-      if: matrix.php-versions == '7.4'
-      run: |
-        wget https://scrutinizer-ci.com/ocular.phar
-        php ocular.phar code-coverage:upload --format=php-clover coverage.clover
